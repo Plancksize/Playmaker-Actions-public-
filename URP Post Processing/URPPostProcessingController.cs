@@ -525,6 +525,11 @@ namespace HutongGames.PlayMaker.Actions
 
             volume = volumeObj.GetComponent<Volume>();
 
+            if (setDefault)
+            {
+                SetDefault(effect);
+            }
+
             #region OVERRIDE CHECK
             if (effect == volumeOverrides.Bloom)
                 if (!volume.sharedProfile.TryGet<Bloom>(out var bloom))
@@ -1576,6 +1581,8 @@ namespace HutongGames.PlayMaker.Actions
             else wb.tint.overrideState = false;
         }
         #endregion
+
+        //Defaults
 
         #region SetDefault()
         void SetDefault(volumeOverrides fx)
