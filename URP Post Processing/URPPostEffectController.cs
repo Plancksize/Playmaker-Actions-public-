@@ -172,11 +172,39 @@ namespace HutongGames.PlayMaker.Actions
         #endregion
 
         #region CHROMATIC ABERRATION VARIABLES
+        [HideIf("HideColorAdjustments")]
+        [ActionSection("Color Adjustments")]
+        [Title("Post Exposure")]
+        public FsmFloat colorAdjustmentsExposure;
+
+        [HideIf("HideColorAdjustments")]
+        [HasFloatSlider(-100, 100)]
+        [Title("Contrast")]
+        public FsmFloat colorAdjustmentsContrast;
+
+        [HideIf("HideColorAdjustments")]
+        [Title("Color Filter")]
+        public FsmColor colorAdjustmentsFilter;
+
+        [HideIf("HideColorAdjustments")]
+        [HasFloatSlider(-180, 180)]
+        [Title("Hue Shift")]
+        public FsmFloat colorAdjustmentsHueShift;
+
+        [HideIf("HideColorAdjustments")]
+        [HasFloatSlider(-100, 100)]
+        [Title("Saturation")]
+        public FsmFloat colorAdjustmentsSaturation;
+
+        #endregion
+
+        #region COLOR ADJUSTMENTS VARIABLES
         [HideIf("HideChromaticAberration")]
         [ActionSection("Channel Mixer")]
         [HasFloatSlider(0, 1)]
         [Title("Intensity")]
         public FsmFloat chromaticAberrationIntensity;
+
         #endregion
 
         #region COLOR LOOKUP VARIABLES
@@ -580,6 +608,14 @@ namespace HutongGames.PlayMaker.Actions
             chromaticAberrationIntensity = 1;
             #endregion
 
+            #region COLOR ADJUSTMENTS RESET
+            colorAdjustmentsExposure = 0;
+            colorAdjustmentsContrast = 0;
+            colorAdjustmentsFilter = new Color(1, 1, 1, 1);
+            colorAdjustmentsHueShift = 0;
+            colorAdjustmentsSaturation = 0;
+            #endregion
+
             #region COLOR LOOKUP RESET
             colorLookuplookupTexture = new FsmTexture { UseVariable = true };
             colorLookupContribution = 1f;
@@ -726,6 +762,7 @@ namespace HutongGames.PlayMaker.Actions
             if (effect == volumeOverrides.Bloom) Bloom();
             if (effect == volumeOverrides.ChannelMixer) ChannelMixer();
             if (effect == volumeOverrides.ChromaticAberration) ChromaticAberration();
+            if (effect == volumeOverrides.ColorAdjustments) ColorAdjustments();
             if (effect == volumeOverrides.ColorLookup) ColorLookup();
             if (effect == volumeOverrides.DepthOfField) DepthOfField();
             if (effect == volumeOverrides.FilmGrain) FilmGrain();
@@ -805,6 +842,26 @@ namespace HutongGames.PlayMaker.Actions
             chromaticAberration.SetAllOverridesTo(true);
 
             chromaticAberration.intensity.value = chromaticAberrationIntensity.Value;
+        }
+
+        public void ColorAdjustments()
+        {
+            if (!volume.sharedProfile.TryGet<ColorAdjustments>(out var overridetest))
+            {
+                LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
+                Finish();
+                return;
+            }
+
+            volumeProfile.TryGet<ColorAdjustments>(out var colorAdjustments);
+
+            colorAdjustments.SetAllOverridesTo(true);
+
+            colorAdjustments.postExposure.value = colorAdjustmentsExposure.Value;
+            colorAdjustments.contrast.value = colorAdjustmentsContrast.Value;
+            colorAdjustments.colorFilter.value = colorAdjustmentsFilter.Value;
+            colorAdjustments.hueShift.value = colorAdjustmentsHueShift.Value;
+            colorAdjustments.saturation.value = colorAdjustmentsSaturation.Value;
         }
 
         public void ColorLookup()
