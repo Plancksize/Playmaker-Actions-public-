@@ -62,10 +62,11 @@ namespace HutongGames.PlayMaker.Actions
         [CheckForComponent(typeof(Volume))]
         [Tooltip("Will not be changed during Runtime")]
         public FsmOwnerDefault volumeOwner;
-
+        #if UNITY_EDITOR
         [Title("Global Mode")]
         [Tooltip("Will not be changed during Runtime")]
         public FsmBool global;
+        #endif
 
         [Title("Weight")]
         [HasFloatSlider(0, 1)]
@@ -80,8 +81,10 @@ namespace HutongGames.PlayMaker.Actions
         public FsmBool fxActive;
 
         [ActionSection("")]
+        [Tooltip("Sets this effect values to Unity's defaults./nWill not work in Playmode.")]
         [Title("Set Effect to Default")]
         public bool setDefault = false;
+
         #endregion
 
         #region BLOOM VARIABLES
@@ -234,6 +237,7 @@ namespace HutongGames.PlayMaker.Actions
         [Title("Mode")]
         public DepthOfFieldMode depthMode;
 
+        //switch
         public bool HideDepthModeGaussian() { if (effect == volumeOverrides.DepthOfField && depthMode == DepthOfFieldMode.Gaussian) return false; else return true; }
 
         [HideIf("HideDepthModeGaussian")]
@@ -254,6 +258,7 @@ namespace HutongGames.PlayMaker.Actions
         [Title("HQ Sampling")]
         public FsmBool gaussianHQSampling;
 
+        //switch
         public bool HideDepthModeBokeh() { if (effect == volumeOverrides.DepthOfField && depthMode == DepthOfFieldMode.Bokeh) return false; else return true; }
 
         [HideIf("HideDepthModeBokeh")]
@@ -303,6 +308,7 @@ namespace HutongGames.PlayMaker.Actions
         [HasFloatSlider(0, 1)]
         public FsmFloat filmGrainResponse;
 
+        //switch
         public bool HideFilmGrainCustom() { if (effect == volumeOverrides.FilmGrain && filmGrainType == FilmGrainLookup.Custom) return false; else return true; }
         [HideIf("HideFilmGrainCustom")]
         [Title("Texture")]
@@ -525,9 +531,13 @@ namespace HutongGames.PlayMaker.Actions
 
             volume = volumeObj.GetComponent<Volume>();
 
-            if (setDefault)
+            if (!Application.isPlaying)
             {
-                SetDefault(effect);
+
+                if (setDefault)
+                {
+                    SetDefault(effect);
+                }
             }
 
             #region OVERRIDE CHECK
@@ -777,9 +787,11 @@ namespace HutongGames.PlayMaker.Actions
 
             volume.weight = volumeWeight.Value;
             volume.priority = volumePriority.Value;
+
             if (setDefault)
             {
-                SetDefault(effect);
+                LogWarning("This Option does not work in Playmode.");
+                setDefault = false;
             }
 
             if (effect == volumeOverrides.Bloom) Bloom();
@@ -1190,10 +1202,13 @@ namespace HutongGames.PlayMaker.Actions
             volumeProfile.TryGet<FilmGrain>(out var filmGrain);
 
             filmGrain.active = fxActive.Value;
-            if (!filmGrain.active) return;
-            else
 
+            if (!filmGrain.active) filmGrain.type.overrideState = false;
+            else
+            {
+                filmGrain.type.overrideState = true;
                 filmGrain.type.value = filmGrainType;
+            } 
 
             if (!filmGrainIntensity.IsNone)
             {
@@ -1329,11 +1344,15 @@ namespace HutongGames.PlayMaker.Actions
             volumeProfile.TryGet<MotionBlur>(out var motionBlur);
 
             motionBlur.active = fxActive.Value;
-            if (!motionBlur.active) return;
+            if (!motionBlur.active) motionBlur.quality.overrideState = false;
             else
-
+            {
+                motionBlur.quality.overrideState = true;
                 motionBlur.mode.value = motionBlurMode;
-            motionBlur.quality.value = motionBlurQuality;
+                motionBlur.quality.value = motionBlurQuality;
+            }
+
+            
 
             if (!motionBlurIntensity.IsNone)
             {
@@ -1417,10 +1436,10 @@ namespace HutongGames.PlayMaker.Actions
             if (!smhHighlights.IsNone || !smhHighlightsIntensity.IsNone)
             {
                 Vector4 smhHighlightsV4 = new Color(smhHighlights.Value.r, smhHighlights.Value.g, smhHighlights.Value.b, smhHighlightsIntensity.Value);
-                smh.midtones.overrideState = true;
-                smh.midtones.value = smhHighlightsV4;
+                smh.highlights.overrideState = true;
+                smh.highlights.value = smhHighlightsV4;
             }
-            else smh.midtones.overrideState = false;
+            else smh.highlights.overrideState = false;
 
             if (!smhShadowLimitStart.IsNone || !smhShadowLimitEnd.IsNone)
             {
@@ -1639,7 +1658,7 @@ namespace HutongGames.PlayMaker.Actions
 
             if (fx == volumeOverrides.ColorLookup)
             {
-                colorLookuplookupTexture = new FsmTexture { UseVariable = true };
+                colorLookuplookupTexture = null;
                 colorLookupContribution = 1f;
                 setDefault = false;
                 return;
