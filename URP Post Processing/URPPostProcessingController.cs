@@ -537,8 +537,9 @@ namespace HutongGames.PlayMaker.Actions
         {
 
             volumeObj = Fsm.GetOwnerDefaultTarget(volumeOwner);
-            
-            if (volumeObj == null && selectedVolumeProfile == null)
+            if (volumeObj != null && !volumeObj.TryGetComponent(out Volume test))
+                return ("");
+            else if (volumeObj == null && selectedVolumeProfile == null)
                 return ("A GameObject with a Volume Component or a Volume Profile is Required. (Current GameObject Value and Volume Profile is Null)");
             else if (selectedVolumeProfile == null && !volumeObj.TryGetComponent(out Volume vol))
                 return ("A GameObject with a Volume Component or a Volume Profile is Required  (Couldn't Find a Volume Component on the GameObject.");
@@ -762,26 +763,29 @@ namespace HutongGames.PlayMaker.Actions
 
             #region RUNTIME ERROR CHECK LOGGING & BREAK
 
-            if (volumeObj == null && selectedVolumeProfile == null)
+            if (volumeObj != null && !volumeObj.TryGetComponent(out Volume test) && selectedVolumeProfile != null)
+            {
+                volumeProfile = selectedVolumeProfile;
+            }
+            else if (volumeObj == null && selectedVolumeProfile == null)
             {
                 LogWarning("There is no GameObject with Volume component or a Volume Profile selected" + " @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
                 return;
             }
-            if (volumeObj != null && !volumeObj.TryGetComponent(out Volume vol) && selectedVolumeProfile == null)
+            else if (volumeObj != null && !volumeObj.TryGetComponent(out Volume vol) && selectedVolumeProfile == null)
             {
                 LogWarning ("There is no Volume component on [" + volumeObj.name + "] @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
                 return;
             }
-            if (volumeObj != null && volumeObj.GetComponent<Volume>().sharedProfile == null && selectedVolumeProfile == null)
+            else if (volumeObj != null && volumeObj.GetComponent<Volume>().sharedProfile == null && selectedVolumeProfile == null)
             {
                 LogWarning("There is no profile in the selected Volume ["  + volumeObj.name + "] @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
                 return;
             }
-
-            if (volumeObj != null && volumeObj.GetComponent<Volume>().sharedProfile != null && selectedVolumeProfile == null)
+            else if (volumeObj != null && volumeObj.GetComponent<Volume>().sharedProfile != null && selectedVolumeProfile == null)
             {
                 selectedVolumeProfile = volumeObj.GetComponent<Volume>().sharedProfile;
             }
