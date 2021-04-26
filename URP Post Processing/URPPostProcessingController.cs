@@ -36,6 +36,8 @@ namespace HutongGames.PlayMaker.Actions
 
         //Show & Hide Switches
         #region SWITCH VARIABLES
+        public bool HideActiveAndDefault() { if (effect != volumeOverrides.None) return false; else return true; }
+        public bool HideVolume() { if (selectedVolumeProfile == null) return false; else return true; }
         public bool HideBloom() { if (effect == volumeOverrides.Bloom) return false; else return true; }
         public bool HideChannelMixer() { if (effect == volumeOverrides.ChannelMixer) return false; else return true; }
         public bool HideChromaticAberration() { if (effect == volumeOverrides.ChromaticAberration) return false; else return true; }
@@ -57,30 +59,41 @@ namespace HutongGames.PlayMaker.Actions
         #region SETUP VARIABLES
         [ActionSection("Setup")]
 
-        [RequiredField]
+        [HideIf("HideVolume")]
         [Title("Volume")]
         [CheckForComponent(typeof(Volume))]
         [Tooltip("Will not be changed during Runtime")]
         public FsmOwnerDefault volumeOwner;
-        #if UNITY_EDITOR
-        [Title("Global Mode")]
-        [Tooltip("Will not be changed during Runtime")]
-        public FsmBool global;
-        #endif
 
+        [Title("Volume Profile")]
+        [Tooltip("Will not be changed during Runtime")]
+        public VolumeProfile selectedVolumeProfile;
+
+        //      There is no real need for this option. This setting should be part of the manual Volume setup
+        //      
+        //      [Title("Global Mode")]
+        //      [Tooltip("Will not be changed during Runtime")]
+        //      public FsmBool global;
+
+        [HideIf("HideVolume")]
         [Title("Weight")]
         [HasFloatSlider(0, 1)]
         public FsmFloat volumeWeight;
+        [HideIf("HideVolume")]
         [Title("Priority")]
         public FsmFloat volumePriority;
 
         [ActionSection("Effects")]
         [Title("Effects")]
         public volumeOverrides effect;
+
+        [HideIf("HideActiveAndDefault")]
         [Title("Active")]
         public FsmBool fxActive;
 
         [ActionSection("")]
+
+        [HideIf("HideActiveAndDefault")]
         [Tooltip("Sets this effect values to Unity's defaults./nWill not work in Playmode.")]
         [Title("Set Effect to Default")]
         public bool setDefault = false;
@@ -522,18 +535,26 @@ namespace HutongGames.PlayMaker.Actions
         #region ERRORCHECK()
         public override string ErrorCheck()
         {
+
             volumeObj = Fsm.GetOwnerDefaultTarget(volumeOwner);
+            
+            if (volumeObj == null && selectedVolumeProfile == null)
+                return ("A GameObject with a Volume Component or a Volume Profile is Required. (Current GameObject Value and Volume Profile is Null)");
+            else if (selectedVolumeProfile == null && !volumeObj.TryGetComponent(out Volume vol))
+                return ("A GameObject with a Volume Component or a Volume Profile is Required  (Couldn't Find a Volume Component on the GameObject.");
+            else if (volumeObj.GetComponent<Volume>().sharedProfile == null)
+                return ("Volume Profile is Required on the selected Volume  (Couldn't Find a Volume Component on the GameObject.");
 
-            if (volumeObj == null)
-                return ("A GameObject with a Volume Component is Required. (Current GameObject Value is Null)");
-            else if (!volumeObj.TryGetComponent(out Volume vol))
-                return ("A GameObject with a Volume Component is Required (Couldn't Find a Volume Component on the GameObject.");
-
-            volume = volumeObj.GetComponent<Volume>();
+            if (selectedVolumeProfile == null)
+            {
+                volumeObj = Fsm.GetOwnerDefaultTarget(volumeOwner);
+                volume = volumeObj.GetComponent<Volume>();
+                volumeProfile = volumeObj.GetComponent<Volume>().sharedProfile;
+            }
+            else volumeProfile = selectedVolumeProfile;
 
             if (!Application.isPlaying)
             {
-
                 if (setDefault)
                 {
                     SetDefault(effect);
@@ -542,50 +563,50 @@ namespace HutongGames.PlayMaker.Actions
 
             #region OVERRIDE CHECK
             if (effect == volumeOverrides.Bloom)
-                if (!volume.sharedProfile.TryGet<Bloom>(out var bloom))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<Bloom>(out var bloom))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.ChannelMixer)
-                if (!volume.sharedProfile.TryGet<ChannelMixer>(out var channelMixer))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<ChannelMixer>(out var channelMixer))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.ChromaticAberration)
-                if (!volume.sharedProfile.TryGet<ChromaticAberration>(out var chromaticAberration))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<ChromaticAberration>(out var chromaticAberration))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.ColorAdjustments)
-                if (!volume.sharedProfile.TryGet<ColorAdjustments>(out var colorAdjustments))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<ColorAdjustments>(out var colorAdjustments))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.ColorLookup)
-                if (!volume.sharedProfile.TryGet<ColorLookup>(out var colorLookup))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<ColorLookup>(out var colorLookup))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.DepthOfField)
-                if (!volume.sharedProfile.TryGet<DepthOfField>(out var depthOfField))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<DepthOfField>(out var depthOfField))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.FilmGrain)
-                if (!volume.sharedProfile.TryGet<FilmGrain>(out var filmGrain))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<FilmGrain>(out var filmGrain))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.LensDistortion)
-                if (!volume.sharedProfile.TryGet<LensDistortion>(out var lensDistortion))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<LensDistortion>(out var lensDistortion))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.LiftGammaGain)
-                if (!volume.sharedProfile.TryGet<LiftGammaGain>(out var liftGammaGain))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<LiftGammaGain>(out var liftGammaGain))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.MotionBlur)
-                if (!volume.sharedProfile.TryGet<MotionBlur>(out var motionBlur))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<MotionBlur>(out var motionBlur))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.PaniniProjection)
-                if (!volume.sharedProfile.TryGet<PaniniProjection>(out var paniniProjection))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<PaniniProjection>(out var paniniProjection))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.ShadowsMidtonesHighlights)
-                if (!volume.sharedProfile.TryGet<ShadowsMidtonesHighlights>(out var shadowsMidtonesHighlights))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<ShadowsMidtonesHighlights>(out var shadowsMidtonesHighlights))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.SplitToning)
-                if (!volume.sharedProfile.TryGet<SplitToning>(out var splitToning))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<SplitToning>(out var splitToning))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.Vignette)
-                if (!volume.sharedProfile.TryGet<Vignette>(out var vignette))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<Vignette>(out var vignette))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             if (effect == volumeOverrides.WhiteBalance)
-                if (!volume.sharedProfile.TryGet<WhiteBalance>(out var whiteBalance))
-                     return ("No " + effect + " Override found on Volume."); 
+                if (!volumeProfile.TryGet<WhiteBalance>(out var whiteBalance))
+                     return ("No " + effect + " Override found on Volume Profile."); 
             #endregion
             
             return "";
@@ -601,7 +622,7 @@ namespace HutongGames.PlayMaker.Actions
             setDefault = false;
             volume = null;
             volumeProfile = null;
-            global = true;
+            //global = true;
             volumeWeight = 1;
             volumePriority = 0;
             fxActive = true;
@@ -741,38 +762,40 @@ namespace HutongGames.PlayMaker.Actions
 
             #region RUNTIME ERROR CHECK LOGGING & BREAK
 
-            if (volumeObj == null)
+            if (volumeObj == null && selectedVolumeProfile == null)
             {
-                LogWarning("There is no GameObject with Volume component" + " @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
+                LogWarning("There is no GameObject with Volume component or a Volume Profile selected" + " @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
                 return;
             }
-            if (!volumeObj.TryGetComponent(out Volume vol))
+            if (volumeObj != null && !volumeObj.TryGetComponent(out Volume vol) && selectedVolumeProfile == null)
             {
                 LogWarning ("There is no Volume component on [" + volumeObj.name + "] @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
                 return;
             }
-            if (volumeObj.GetComponent<Volume>().sharedProfile == null)
+            if (volumeObj != null && volumeObj.GetComponent<Volume>().sharedProfile == null && selectedVolumeProfile == null)
             {
                 LogWarning("There is no profile in the selected Volume ["  + volumeObj.name + "] @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
                 return;
             }
-            
+
+            if (volumeObj != null && volumeObj.GetComponent<Volume>().sharedProfile != null && selectedVolumeProfile == null)
+            {
+                selectedVolumeProfile = volumeObj.GetComponent<Volume>().sharedProfile;
+            }
+
             #endregion
 
-            volumeProfile = volumeObj.GetComponent<Volume>().sharedProfile;
-            volume = volumeObj.GetComponent<Volume>();
-
-            volume.isGlobal = global.Value;
+            //volume.isGlobal = global.Value;
 
             Action();
 
             if (!everyFrame) Finish();
         }
 
-        //On Enter & Update
+        //On Update
         public override void OnActionUpdate()
         {
             Action();
@@ -782,11 +805,18 @@ namespace HutongGames.PlayMaker.Actions
         #region ACTION()
         public void Action()
         {
-            volumeProfile = volumeObj.GetComponent<Volume>().sharedProfile;
-            volume = volumeObj.GetComponent<Volume>();
+            if (selectedVolumeProfile == null)
+            {
+                volume = volumeObj.GetComponent<Volume>();
+                volumeProfile = volumeObj.GetComponent<Volume>().sharedProfile;                
+            }
+            else volumeProfile = selectedVolumeProfile;
 
-            volume.weight = volumeWeight.Value;
-            volume.priority = volumePriority.Value;
+            if (selectedVolumeProfile == null)
+            {
+                volume.weight = volumeWeight.Value;
+                volume.priority = volumePriority.Value;
+            }
 
             if (setDefault)
             {
@@ -817,7 +847,7 @@ namespace HutongGames.PlayMaker.Actions
         #region BLOOM()
         public void Bloom()
         {
-            if (!volume.sharedProfile.TryGet<Bloom>(out var overridetest))
+            if (!volumeProfile.TryGet<Bloom>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -899,7 +929,7 @@ namespace HutongGames.PlayMaker.Actions
         #region CHANNEL MIXER()
         public void ChannelMixer()
         {
-            if (!volume.sharedProfile.TryGet<ChannelMixer>(out var overridetest))
+            if (!volumeProfile.TryGet<ChannelMixer>(out var overridetest))
             {
                 LogWarning("No " + effect + " found on volume @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -980,7 +1010,7 @@ namespace HutongGames.PlayMaker.Actions
         #region CHORMATIC ABERRATION()
         public void ChromaticAberration()
         {
-            if (!volume.sharedProfile.TryGet<ChromaticAberration>(out var overridetest))
+            if (!volumeProfile.TryGet<ChromaticAberration>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1005,7 +1035,7 @@ namespace HutongGames.PlayMaker.Actions
         #region COLOR ADJUSTMENTS()
         public void ColorAdjustments()
         {
-            if (!volume.sharedProfile.TryGet<ColorAdjustments>(out var overridetest))
+            if (!volumeProfile.TryGet<ColorAdjustments>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1058,7 +1088,7 @@ namespace HutongGames.PlayMaker.Actions
         #region COLOR LOOKUP()
         public void ColorLookup()
         {
-            if (!volume.sharedProfile.TryGet<ColorLookup>(out var overridetest))
+            if (!volumeProfile.TryGet<ColorLookup>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1090,7 +1120,7 @@ namespace HutongGames.PlayMaker.Actions
         #region DEPTH OF FIELD()
         public void DepthOfField()
         {
-            if (!volume.sharedProfile.TryGet<DepthOfField>(out var overridetest))
+            if (!volumeProfile.TryGet<DepthOfField>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1192,7 +1222,7 @@ namespace HutongGames.PlayMaker.Actions
         #region FILM GRAIN()
         public void FilmGrain()
         {
-            if (!volume.sharedProfile.TryGet<FilmGrain>(out var overridetest))
+            if (!volumeProfile.TryGet<FilmGrain>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1239,7 +1269,7 @@ namespace HutongGames.PlayMaker.Actions
         #region LENS DISTORTION()
         public void LensDistortion()
         {
-            if (!volume.sharedProfile.TryGet<LensDistortion>(out var overridetest))
+            if (!volumeProfile.TryGet<LensDistortion>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1292,7 +1322,7 @@ namespace HutongGames.PlayMaker.Actions
         #region LIFT GAMMA GAIN()
         public void LiftGammaGain()
         {
-            if (!volume.sharedProfile.TryGet<LiftGammaGain>(out var overridetest))
+            if (!volumeProfile.TryGet<LiftGammaGain>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1334,7 +1364,7 @@ namespace HutongGames.PlayMaker.Actions
         #region MOTION BLUR()
         public void MotionBlur()
         {
-            if (!volume.sharedProfile.TryGet<MotionBlur>(out var overridetest))
+            if (!volumeProfile.TryGet<MotionBlur>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1373,7 +1403,7 @@ namespace HutongGames.PlayMaker.Actions
         #region PANINI PROJECTION()
         public void PaniniProjection()
         {
-            if (!volume.sharedProfile.TryGet<PaniniProjection>(out var overridetest))
+            if (!volumeProfile.TryGet<PaniniProjection>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1405,7 +1435,7 @@ namespace HutongGames.PlayMaker.Actions
         #region SHADOWS MIDTONES HIGHLIGHTS()
         public void ShadowsMidtonesHighlights()
         {
-            if (!volume.sharedProfile.TryGet<ShadowsMidtonesHighlights>(out var overridetest))
+            if (!volumeProfile.TryGet<ShadowsMidtonesHighlights>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1480,7 +1510,7 @@ namespace HutongGames.PlayMaker.Actions
         #region SPLIT TONING()
         public void SplitToning()
         {
-            if (!volume.sharedProfile.TryGet<SplitToning>(out var overridetest))
+            if (!volumeProfile.TryGet<SplitToning>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1519,7 +1549,7 @@ namespace HutongGames.PlayMaker.Actions
         #region VIGNETTE()
         public void Vignette()
         {
-            if (!volume.sharedProfile.TryGet<Vignette>(out var overridetest))
+            if (!volumeProfile.TryGet<Vignette>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
@@ -1572,7 +1602,7 @@ namespace HutongGames.PlayMaker.Actions
         #region WHITE BALANCE()
         public void WhiteBalance()
         {
-            if (!volume.sharedProfile.TryGet<WhiteBalance>(out var overridetest))
+            if (!volumeProfile.TryGet<WhiteBalance>(out var overridetest))
             {
                 LogWarning("No " + effect + " Override found @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
