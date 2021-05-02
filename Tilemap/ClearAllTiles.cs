@@ -35,7 +35,7 @@ namespace HutongGames.PlayMaker.Actions
         //Error Check
         public override string ErrorCheck()
         {
-            if (tilemapObject.Value == null || tilemap.Value == null)
+            if (tilemapObject.Value == null && tilemap.Value == null)
                 return "either a tilemap or a GameObject with a tilemap is required";
 
             return "";
