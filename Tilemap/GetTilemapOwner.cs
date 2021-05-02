@@ -35,7 +35,7 @@ namespace HutongGames.PlayMaker.Actions
         }
 
         //On Enter
-		public override void OnEnter()
+	public override void OnEnter()
         {   
             Action();
 
