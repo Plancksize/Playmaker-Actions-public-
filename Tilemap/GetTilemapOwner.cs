@@ -28,7 +28,7 @@ namespace HutongGames.PlayMaker.Actions
 
         //On Reset
         public override void Reset()
-		{
+	{
             tilemap = new FsmObject { UseVariable = true };
             tilemapOwner = new FsmGameObject { UseVariable = true };
             map = null;
