@@ -88,7 +88,7 @@ namespace HutongGames.PlayMaker.Actions
         //Checks for required variables
         public override string ErrorCheck()
         {
-            if (tilemapObject.Value == null && tilemap.Value == null)
+            if (tilemapObject.Value == null || tilemap.Value == null)
                 return "Either a Tilemap or a GameObject with a Tilemap is required.";
 
             return "";

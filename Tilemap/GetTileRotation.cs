@@ -91,7 +91,7 @@ namespace HutongGames.PlayMaker.Actions
         public override void OnEnter()
         {
             //Error Debug Log
-            if (tilemapObject.Value == null && tilemap.Value == null)
+            if (tilemapObject.Value == null || tilemap.Value == null)
             {
                 Debug.LogWarning("Either a Tilemap or a GameObject with a Tilemap is required." + " @ " + Fsm.GetFullFsmLabel(this.Fsm) + " | " + Fsm.ActiveStateName);
                 Finish();
